@@ -15,19 +15,14 @@ We need a lightweight, vendor-neutral way to toggle features and roll them out s
 ## 2) Architecture (at a glance)
 
 ```mermaid
-flowchart LR
-    subgraph Clients
-      SDK[Client SDKs / Services]
-    end
-
-    SDK --> GW[API Gateway]
-    GW --> API[Feature Service (FastAPI)]
-    API -->|read-through| R[(Redis Cache)]
-    API -->|source of truth| DB[(PostgreSQL)]
-    API --> MET[(Prometheus /metrics)]
-    API --> AUD[(Audit Table)]
-    MET --> GRAF[Grafana]
-    API -.pub/sub invalidate.-> R
+graph LR
+  SDK["Client SDKs and Services"] --> GW["API Gateway"]
+  GW --> API["Feature Service"]
+  API --> RD["Redis"]
+  API --> PG["PostgreSQL"]
+  API --> MET["Prometheus"]
+  MET --> GRAF["Grafana"]
+  API --> AUD["Audit Log"]
 ```
 
 **Why this shape**
@@ -94,7 +89,7 @@ flowchart LR
 
 ---
 
-## 8) Debugging Story — The Case of the Disappearing Cache
+## 8) A Debugging Situation — The Disappearing Cache
 
 During a ramp test, p95/p99 spiked for ~20 seconds immediately after flag updates. Redis metrics were flat, but DB reads tripled. Traces showed two cache keys in circulation: `feature:Key` and `feature:key`. A lowercase normalization was added in one code path but not the other.
 
